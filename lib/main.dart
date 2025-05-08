@@ -1,143 +1,173 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
+import 'screen/homescreen.dart';
 
 void main() {
-  runApp(const ToDoApp());
+  runApp(const TodoListApp());
 }
 
-class ToDoApp extends StatelessWidget {
-  const ToDoApp({super.key});
+class TodoListApp extends StatelessWidget {
+  const TodoListApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'ToDo List',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: const ToDoHomePage(),
+      themeMode: ThemeMode.system,
+      theme: ThemeData.light(useMaterial3: true).copyWith(
+        primaryColor: Colors.indigo,
+        textTheme: GoogleFonts.poppinsTextTheme(),
+      ),
+      darkTheme: ThemeData.dark(useMaterial3: true).copyWith(
+        primaryColor: Colors.deepPurple,
+        scaffoldBackgroundColor: Colors.grey[900],
+        textTheme: GoogleFonts.poppinsTextTheme(
+          ThemeData.dark().textTheme,
+        ),
+      ),
+      home: const HomeScreen(),
     );
   }
 }
 
-class Task {
+class Todo {
   String title;
   bool isDone;
 
-  Task({required this.title, this.isDone = false});
+  Todo({
+    required this.title,
+    this.isDone = false,
+  });
 
-  Map<String, dynamic> toJson() => {
-        'title': title,
-        'isDone': isDone,
-      };
+  Map<String, dynamic> toMap() {
+    return {'title': title, 'isDone': isDone};
+  }
 
-  factory Task.fromJson(Map<String, dynamic> json) =>
-      Task(title: json['title'], isDone: json['isDone']);
+  factory Todo.fromMap(Map<String, dynamic> map) {
+    return Todo(
+      title: map['title'],
+      isDone: map['isDone'],
+    );
+  }
 }
 
-class ToDoHomePage extends StatefulWidget {
-  const ToDoHomePage({super.key});
+class TodoListScreen extends StatefulWidget {
+  const TodoListScreen({super.key});
 
   @override
-  State<ToDoHomePage> createState() => _ToDoHomePageState();
+  State<TodoListScreen> createState() => _TodoListScreenState();
 }
 
-class _ToDoHomePageState extends State<ToDoHomePage> {
+class _TodoListScreenState extends State<TodoListScreen> {
+  List<Todo> todos = [];
   final TextEditingController _controller = TextEditingController();
-  List<Task> _tasks = [];
 
   @override
   void initState() {
     super.initState();
-    _loadTasks();
+    loadTodos();
   }
 
-  Future<void> _loadTasks() async {
+  Future<void> loadTodos() async {
     final prefs = await SharedPreferences.getInstance();
-    final tasksString = prefs.getString('tasks');
-    if (tasksString != null) {
-      final List decoded = jsonDecode(tasksString);
+    final data = prefs.getString('todo_list');
+    if (data != null) {
+      final List decoded = jsonDecode(data);
       setState(() {
-        _tasks = decoded.map((e) => Task.fromJson(e)).toList();
+        todos = decoded.map((e) => Todo.fromMap(e)).toList();
       });
     }
   }
 
-  Future<void> _saveTasks() async {
+  Future<void> saveTodos() async {
     final prefs = await SharedPreferences.getInstance();
-    final encoded = jsonEncode(_tasks.map((e) => e.toJson()).toList());
-    await prefs.setString('tasks', encoded);
+    final encoded = jsonEncode(todos.map((e) => e.toMap()).toList());
+    await prefs.setString('todo_list', encoded);
   }
 
-  void _addTask(String title) {
+  void addTodo(String title) {
     if (title.isEmpty) return;
     setState(() {
-      _tasks.add(Task(title: title));
+      todos.add(Todo(title: title));
       _controller.clear();
     });
-    _saveTasks();
+    saveTodos();
   }
 
-  void _toggleTask(int index) {
+  void toggleDone(int index) {
     setState(() {
-      _tasks[index].isDone = !_tasks[index].isDone;
+      todos[index].isDone = !todos[index].isDone;
     });
-    _saveTasks();
+    saveTodos();
   }
 
-  void _deleteTask(int index) {
+  void deleteTodo(int index) {
     setState(() {
-      _tasks.removeAt(index);
+      todos.removeAt(index);
     });
-    _saveTasks();
+    saveTodos();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ToDo List')),
+      appBar: AppBar(
+        title: const Text('ToDo List'),
+        centerTitle: true,
+      ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(12.0),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    decoration:
-                        const InputDecoration(labelText: 'Tambah tugas'),
+                    decoration: const InputDecoration(
+                      labelText: 'Tambahkan tugas',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: () => _addTask(_controller.text),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () => addTodo(_controller.text),
+                  child: const Icon(Icons.add),
                 ),
               ],
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              itemCount: _tasks.length,
-              itemBuilder: (context, index) {
-                final task = _tasks[index];
-                return ListTile(
-                  title: Text(
-                    task.title,
-                    style: TextStyle(
-                        decoration:
-                            task.isDone ? TextDecoration.lineThrough : null),
+            child: todos.isEmpty
+                ? const Center(child: Text('Belum ada tugas.'))
+                : ListView.builder(
+                    itemCount: todos.length,
+                    itemBuilder: (context, index) {
+                      final todo = todos[index];
+                      return ListTile(
+                        leading: Checkbox(
+                          value: todo.isDone,
+                          onChanged: (_) => toggleDone(index),
+                        ),
+                        title: Text(
+                          todo.title,
+                          style: TextStyle(
+                            decoration: todo.isDone
+                                ? TextDecoration.lineThrough
+                                : TextDecoration.none,
+                          ),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () => deleteTodo(index),
+                        ),
+                      );
+                    },
                   ),
-                  leading: Checkbox(
-                    value: task.isDone,
-                    onChanged: (_) => _toggleTask(index),
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () => _deleteTask(index),
-                  ),
-                );
-              },
-            ),
           ),
         ],
       ),

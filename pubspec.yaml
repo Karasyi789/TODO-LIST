@@ -1,8 +1,6 @@
 name: todo_list_app
 description: A simple ToDo List app built with Flutter.
 
-publish_to: 'none' # Remove this line if you are publishing your package
-
 version: 1.0.0+1
 
 environment:
@@ -11,8 +9,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  shared_preferences: ^2.2.2  # Untuk menyimpan data secara lokal
-  cupertino_icons: ^1.0.8  # Ikon untuk aplikasi iOS
+  shared_preferences: ^2.2.2
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -20,6 +19,12 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
   assets:
-    - assets/images/  # Menambahkan folder assets (jika ada gambar yang digunakan dalam aplikasi)
+    - assets/fonts/
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Reguler.ttf
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700
+  

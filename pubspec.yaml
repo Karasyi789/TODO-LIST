@@ -12,6 +12,7 @@ dependencies:
   shared_preferences: ^2.2.2
   cupertino_icons: ^1.0.8
   google_fonts: ^6.2.1
+  provider: ^6.1.2
 
 dev_dependencies:
   flutter_test:
@@ -24,7 +25,7 @@ flutter:
   fonts:
     - family: Poppins
       fonts:
-        - asset: assets/fonts/Poppins-Reguler.ttf
+        - asset: assets/fonts/Poppins-Regular.ttf
         - asset: assets/fonts/Poppins-Bold.ttf
           weight: 700
   
